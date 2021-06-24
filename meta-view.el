@@ -38,5 +38,17 @@
   :group 'tool
   :link '(url-link :tag "Repository" "https://github.com/jcs-elpa/meta-view"))
 
+(defconst meta-view--tag-property "P:"
+  "Tag represent property declaration.")
+
+(defconst meta-view--tag-method "M:"
+  "Tag represent method/function declaration.")
+
+(defconst meta-view--tag-type "T:"
+  "Tag represent type declaration.")
+
+(defconst meta-view--tag-enum "F:"
+  "Tag represent enum item.")
+
 (provide 'meta-view)
 ;;; meta-view.el ends here
