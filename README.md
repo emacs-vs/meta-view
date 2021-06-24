@@ -2,6 +2,7 @@
 ![CI](https://github.com/jcs-elpa/meta-view/workflows/CI/badge.svg)
 
 # meta-view
+> View metadata from .NET assemblies
 
 ## :floppy_disk: Quickstart
 
