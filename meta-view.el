@@ -8,7 +8,7 @@
 ;; Keyword: assembly metadata source
 ;; Version: 0.1.0
 ;; Package-Requires: ((emacs "24.3"))
-;; URL: https://github.com/jcs-elpa/meta-view
+;; URL: https://github.com/emacs-vs/meta-view
 
 ;; This file is NOT part of GNU Emacs.
 
@@ -32,33 +32,13 @@
 
 ;;; Code:
 
-(require 'xml)
+(require 'meta-net)
 
 (defgroup meta-view nil
   "View metadata from .NET assemblies."
   :prefix "meta-view-"
   :group 'tool
-  :link '(url-link :tag "Repository" "https://github.com/jcs-elpa/meta-view"))
-
-(defconst meta-view--tag-property "P:"
-  "Tag represent property declaration.")
-
-(defconst meta-view--tag-method "M:"
-  "Tag represent method/function declaration.")
-
-(defconst meta-view--tag-type "T:"
-  "Tag represent type (enum, class, interface) declaration.")
-
-(defconst meta-view--tag-enum "F:"
-  "Tag represent enum item.")
-
-(defun meta-view--parse-xml (path)
-  ""
-  (let* ((parse-tree (xml-parse-file path))
-         (doc-mode (assq 'doc parse-tree))
-         (assembly-node (car (xml-get-children doc-node 'assembly)))
-         (member-nodes (xml-get-children doc-node 'member)))
-    ))
+  :link '(url-link :tag "Repository" "https://github.com/emacs-vs/meta-view"))
 
 (provide 'meta-view)
 ;;; meta-view.el ends here
