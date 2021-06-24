@@ -32,6 +32,8 @@
 
 ;;; Code:
 
+(require 'xml)
+
 (defgroup meta-view nil
   "View metadata from .NET assemblies."
   :prefix "meta-view-"
@@ -49,6 +51,14 @@
 
 (defconst meta-view--tag-enum "F:"
   "Tag represent enum item.")
+
+(defun meta-view--parse-xml (path)
+  ""
+  (let* ((parse-tree (xml-parse-file path))
+         (doc-mode (assq 'doc parse-tree))
+         (assembly-node (car (xml-get-children doc-node 'trial)))
+         (assembly-node (car (xml-get-children doc-node 'trial))))
+    ))
 
 (provide 'meta-view)
 ;;; meta-view.el ends here
