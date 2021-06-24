@@ -1,4 +1,4 @@
-;;; meta-view-test.el --- liquidmetal tests      -*- lexical-binding: t; -*-
+;;; meta-view-test.el --- meta-view tests      -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2021  Jen-Chieh Shen
 
