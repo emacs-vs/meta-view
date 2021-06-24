@@ -47,7 +47,7 @@
   "Tag represent method/function declaration.")
 
 (defconst meta-view--tag-type "T:"
-  "Tag represent type declaration.")
+  "Tag represent type (enum, class, interface) declaration.")
 
 (defconst meta-view--tag-enum "F:"
   "Tag represent enum item.")
@@ -56,8 +56,8 @@
   ""
   (let* ((parse-tree (xml-parse-file path))
          (doc-mode (assq 'doc parse-tree))
-         (assembly-node (car (xml-get-children doc-node 'trial)))
-         (assembly-node (car (xml-get-children doc-node 'trial))))
+         (assembly-node (car (xml-get-children doc-node 'assembly)))
+         (member-nodes (xml-get-children doc-node 'member)))
     ))
 
 (provide 'meta-view)
