@@ -7,7 +7,7 @@
 ;; Description: View metadata from .NET assemblies
 ;; Keyword: assembly metadata source
 ;; Version: 0.1.0
-;; Package-Requires: ((emacs "24.3"))
+;; Package-Requires: ((emacs "24.3") (meta-net "1.0.0"))
 ;; URL: https://github.com/emacs-vs/meta-view
 
 ;; This file is NOT part of GNU Emacs.
@@ -39,6 +39,12 @@
   :prefix "meta-view-"
   :group 'tool
   :link '(url-link :tag "Repository" "https://github.com/emacs-vs/meta-view"))
+
+;;;###autoload
+(defun meta-view ()
+  ""
+  (interactive)
+  )
 
 (provide 'meta-view)
 ;;; meta-view.el ends here
