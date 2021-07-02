@@ -73,7 +73,7 @@
 
 ;;;###autoload
 (defun meta-view (&optional name)
-  "View "
+  "View metadata by NAME."
   (interactive)
   (unless (memq major-mode meta-view-active-modes)
     (user-error "Invalid major-mode to view metadata, %s" major-mode))
