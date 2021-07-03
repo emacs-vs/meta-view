@@ -7,7 +7,7 @@
 ;; Description: View metadata from .NET assemblies
 ;; Keyword: assembly metadata source
 ;; Version: 0.1.0
-;; Package-Requires: ((emacs "24.3") (csharp-mode "0.11.0") (meta-net "1.0.0") (ht "2.3"))
+;; Package-Requires: ((emacs "24.3") (csharp-mode "0.11.0") (meta-net "1.0.0") (ht "2.3") (f "0.20.0"))
 ;; URL: https://github.com/emacs-vs/meta-view
 
 ;; This file is NOT part of GNU Emacs.
@@ -33,9 +33,11 @@
 ;;; Code:
 
 (require 'cl-lib)
+(require 'subr-x)
 
 (require 'csharp-mode)
 (require 'ht)
+(require 'f)
 (require 'meta-net)
 
 (defgroup meta-view nil
@@ -51,8 +53,7 @@
   :group 'meta-view)
 
 (defconst meta-view--templates-dir
-  (let ((dir (file-name-directory (find-library-name "meta-view"))))
-    (concat dir "templates/"))
+  (concat (file-name-directory load-file-name) "templates/")
   "Templates path for package `meta-view'.")
 
 (defconst meta-view--buffer-name "* %s [from metadata] *"
@@ -74,7 +75,9 @@
   `(let ((buf-name (format meta-view--buffer-name name)))
      (with-current-buffer (get-buffer-create buf-name)
        (setq meta-view--buffer (current-buffer))
-       (csharp-mode) (progn ,@body))))
+       (csharp-mode)
+       (let (buffer-read-only) (progn ,@body))
+       (setq buffer-read-only t))))
 
 (defun meta-view--kill-display-buffer ()
   "Kill the metadata display buffer."
@@ -108,6 +111,21 @@ If REFRESH is non-nil, refresh cache once."
 ;; (@* "Core" )
 ;;
 
+(defun meta-view--match-namespaces (namespaces)
+  "Return non-nil, if buffer matches these NAMESPACES.
+
+Argument NAMESPACES is a list of string."
+  (let ((match t) ns (index 0) (len (length namespaces)) last-item)
+    (while (and match (< index len))
+      (setq ns (nth index namespaces)
+            last-item (= index (1- len))
+            index (1+ index)
+            match (string-match-p (format "\\_<%s\\_>%s" ns (if last-item "[.;]" "[.]"))
+                                  (buffer-string))))
+    match))
+
+(defun meta-view--find-type ())
+
 ;;;###autoload
 (defun meta-view-at-point ()
   "View metadata at current point."
@@ -123,7 +141,14 @@ If REFRESH is non-nil, refresh cache once."
   (unless (stringp name) (user-error "Invalid name to view metadata, %s" name))
   (unless meta-net-csproj-current (meta-net-read-project))
   (meta-view--kill-display-buffer)
-  )
+  (dolist (xml (meta-view--all-xmls))
+    (when-let* ((base (f-base xml)) (namespaces (split-string base "\\."))
+                (match (meta-view--match-namespaces namespaces))
+                (data (meta-net-xml-data xml)))
+      (jcs-print xml)
+      (ignore-errors (jcs-log-list (ht-keys data)))
+      )
+    ))
 
 (provide 'meta-view)
 ;;; meta-view.el ends here
