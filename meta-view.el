@@ -111,20 +111,21 @@ If REFRESH is non-nil, refresh cache once."
 ;; (@* "Core" )
 ;;
 
-(defun meta-view--match-namespaces (namespaces)
-  "Return non-nil, if buffer matches these NAMESPACES.
+(defun meta-view--match-name (name)
+  "Return non-nil, if NAME exists inside the buffer.
 
-Argument NAMESPACES is a list of string."
-  (let ((match t) ns (index 0) (len (length namespaces)) last-item)
-    (while (and match (< index len))
-      (setq ns (nth index namespaces)
-            last-item (= index (1- len))
-            index (1+ index)
-            match (string-match-p (format "\\_<%s\\_>%s" ns (if last-item "[.;]" "[.]"))
-                                  (buffer-string))))
+The name should similar to namepsace syntax, `System.Collections.UI`, etc."
+  (let* ((names (split-string name "\\."))
+         (match t) keyword (index 0) (len (length names)))
+    (save-excursion
+      ;; Incremental search from the start of the buffer to eliminate
+      ;; some of the possible candidates.
+      (goto-char (point-min))
+      (while (and match (< index len))
+        (setq keyword (nth index names)
+              index (1+ index)
+              match (re-search-forward (format "%s[ \t\n]*[.;]" keyword) nil t))))
     match))
-
-(defun meta-view--find-type ())
 
 ;;;###autoload
 (defun meta-view-at-point ()
@@ -142,11 +143,13 @@ Argument NAMESPACES is a list of string."
   (unless meta-net-csproj-current (meta-net-read-project))
   (meta-view--kill-display-buffer)
   (dolist (xml (meta-view--all-xmls))
-    (when-let* ((base (f-base xml)) (namespaces (split-string base "\\."))
-                (match (meta-view--match-namespaces namespaces))
-                (data (meta-net-xml-data xml)))
+    (when-let* ((base (f-base xml))
+                (match-ns (meta-view--match-name base))
+                (data (meta-net-xml-data xml))
+                ;;(types (ht-keys data))
+                )
       (jcs-print xml)
-      (ignore-errors (jcs-log-list (ht-keys data)))
+      ;;(ignore-errors (jcs-log-list types))
       )
     ))
 
