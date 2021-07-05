@@ -65,9 +65,16 @@
 (defvar-local meta-view--xmls nil
   "Cache records a list of assembly xml file path.")
 
+(defvar meta-view-show-debug nil
+  "Show the debug message from this package.")
+
 ;;
 ;; (@* "Util" )
 ;;
+
+(defun meta-view-debug (fmt &rest args)
+  "Debug message like function `message' with same argument FMT and ARGS."
+  (when meta-view-show-debug (apply 'message fmt args)))
 
 (defmacro meta-view--with-buffer (name &rest body)
   "Execute BODY inside the metadata displayed buffer with NAME."
@@ -94,7 +101,7 @@
 
 We use these path as search index for variable `meta-net-xml'."
   (let (xmls)
-    (dolist (path (meta-net-csporj-files))
+    (dolist (path (meta-net-csproj-files))
       (setq xmls (append (meta-net-csproj-xmls path))))
     xmls))
 
@@ -144,12 +151,23 @@ The name should similar to namepsace syntax, `System.Collections.UI`, etc."
   (meta-view--kill-display-buffer)
   (dolist (xml (meta-view--all-xmls))
     (when-let* ((base (f-base xml))
-                (match-ns (meta-view--match-name base))
-                (data (meta-net-xml-data xml))
-                ;;(types (ht-keys data))
-                )
-      (jcs-print xml)
-      ;;(ignore-errors (jcs-log-list types))
+                ;; We first compare namespaces
+                (_match (meta-view--match-name base))
+                (types (meta-net-xml-types xml)))
+      (meta-view-debug "\f")
+      (meta-view-debug "%s" xml)
+      (dolist (type types)
+        ;; Then we simply compare the type
+        (when-let ((_match (meta-view--match-name type))
+                   (methods (meta-net-type-methods xml type))
+                   (fields (meta-net-type-fields xml type))
+                   (properties (meta-net-type-properties xml type)))
+          (jcs-print "Type:" type)
+          ;;(jcs-log-list (ht-keys methods))
+          (ignore-errors (jcs-log-list (ht-keys fields)))
+          (ignore-errors (jcs-log-list (ht-keys properties)))
+          )
+        )
       )
     ))
 
