@@ -1,8 +1,6 @@
-#region $ASSEMBLY_INFO
-// $COMMENT
+#region Assembly $ASSEMBLY_INFO
+// $DLL_PATH
 #endregion
-
-$USING
 
 namespace $NAMESPACE
 {

@@ -52,11 +52,21 @@
   :type 'list
   :group 'meta-view)
 
+(defcustom meta-view-after-insert-hook nil
+  "Hooks run after buffer is inserted to display view."
+  :type 'hook
+  :group 'meta-view)
+
+(defcustom meta-view-display-function #'switch-to-buffer-other-window
+  "Function to display reference data."
+  :type 'function
+  :group 'meta-view)
+
 (defconst meta-view--templates-dir
   (concat (file-name-directory load-file-name) "templates/")
   "Templates path for package `meta-view'.")
 
-(defconst meta-view--buffer-name "%s : [from metadata]"
+(defconst meta-view--buffer-name "%s <from metadata>"
   "Buffer name to display metadata.")
 
 (defvar meta-view--buffers nil
@@ -86,6 +96,10 @@
 This function uses `string-match-p'."
   (cl-some (lambda (elm) (string-match-p (regexp-quote elm) in-str)) in-list))
 
+(defun meta-view--line-empty-p ()
+  "Return non-nil, if current line empty."
+  (string-empty-p (thing-at-point 'line)))
+
 (defun meta-view--get-string-from-file (path)
   "Return PATH file content."
   (if (file-exists-p path)
@@ -107,34 +121,143 @@ This function uses `string-match-p'."
        (meta-view--add-buffer (current-buffer))
        (delay-mode-hooks (funcall 'csharp-mode))
        (ignore-errors (font-lock-ensure))
-       (let (buffer-read-only) (progn ,@body))
+       (buffer-disable-undo)
+       (let (buffer-read-only)
+         (erase-buffer)
+         (progn ,@body)
+         (run-hooks 'meta-view-after-insert-hook))
        (setq buffer-read-only t))))
 
 ;;
 ;; (@* "Xmls" )
 ;;
 
-(defun meta-view--get-xmls ()
-  "Return a list of assembly xml files.
-
-We use these path as search index for variable `meta-net-xml'."
-  (let (xmls)
-    (dolist (path (meta-net-csproj-files))
-      (setq xmls (append (meta-net-csproj-xmls path))))
-    xmls))
-
 (defun meta-view--all-xmls (&optional refresh)
   "Return full list of assembly xml files.
 
 If REFRESH is non-nil, refresh cache once."
   (when (or refresh (null meta-view--xmls))
-    (setq meta-view--xmls (meta-view--get-xmls))
+    (setq meta-view--xmls (meta-net-csproj-xmls meta-net-csproj-current))
     (cl-delete-duplicates meta-view--xmls))
   meta-view--xmls)
 
 ;;
+;; (@* "Insertion" )
+;;
+
+(defun meta-view--insert-summary (summary)
+  "Insert SUMMARY to meta source buffer."
+  (when summary
+    (insert "\n")
+    (insert "//\n")
+    (insert "// Summary:\n")
+    (insert "//     " summary)))
+
+(defun meta-view--insert-type-summary (summary type)
+  "Insert type SUMMARY, what's above class/enum/interface.
+
+We use argument TYPE to raise accuracy while search for position."
+  (save-excursion
+    (goto-char (point-min))
+    (search-forward (format "namespace %s" type) nil t)
+    (forward-line 1)
+    (end-of-line)
+    (meta-view--insert-summary summary)))
+
+(defun meta-view--insert-namespace (namespace type)
+  "Insert NAMESPACE string below syntax `endregion'.
+
+We use argument TYPE to raise accuracy while search for position."
+  (save-excursion
+    (goto-char (point-min))
+    (search-forward (format "namespace %s" type) nil t)
+    (forward-line -1)
+    (save-excursion
+      (forward-line -1)
+      (unless (meta-view--line-empty-p)
+        (end-of-line)
+        (insert "\n")))
+    (insert "using " namespace ";\n")))
+
+(defun meta-view--insert-methods-params (params)
+  "Insert all PARAMS document string."
+  (let ((first t))
+    (dolist (param params)
+      (insert "\n")
+      (if first (setq first nil) (insert "//\n") )
+      (insert "//   " (car param) ":\n")
+      (if (cdr param)
+          (insert "//     " (cdr param))
+        (backward-delete-char 1)))))
+
+(defun meta-view--insert-methods-returns (desc)
+  "Insert return (DESC) document string."
+  (when desc
+    (insert "\n")
+    (insert "// Returns:\n")
+    (insert "//     " desc)))
+
+(defun meta-view--insert-methods (methods)
+  "Insert METHODS data."
+  (let ((keys (ht-keys methods)) item summary params returns)
+    (dolist (key keys)
+      (setq item (ht-get methods key)
+            summary (ht-get item 'summary)
+            params (ht-get item 'params)
+            returns (ht-get item 'returns))
+      (meta-view--insert-summary summary)
+      (insert "\n")
+      (insert "//\n")
+      (insert "// Parameters:")
+      (meta-view--insert-methods-params params)
+      (meta-view--insert-methods-returns returns)
+      (insert "\n")
+      (insert "public var " key ";"))))
+
+(defun meta-view--insert-fields (fields)
+  "Insert FIELDS data."
+  (let ((keys (ht-keys fields)) item summary)
+    (dolist (key keys)
+      (setq item (ht-get fields key)
+            summary (ht-get item 'summary))
+      (meta-view--insert-summary summary)
+      (insert "\n")
+      (insert key ","))))
+
+(defun meta-view--insert-events (events)
+  "Insert EVENTS data."
+  (let ((keys (ht-keys events)) item summary)
+    (dolist (key keys)
+      (setq item (ht-get events key)
+            summary (ht-get item 'summary))
+      (meta-view--insert-summary summary)
+      (insert "\n")
+      (insert "public event " key ";"))))
+
+(defun meta-view--insert-properties (properties)
+  "Insert PROPERTIES data."
+  (let ((keys (ht-keys properties)) item summary)
+    (dolist (key keys)
+      (setq item (ht-get properties key)
+            summary (ht-get item 'summary))
+      (meta-view--insert-summary summary)
+      (insert "\n")
+      (insert "public var " key ";"))))
+
+;;
 ;; (@* "Core" )
 ;;
+
+(defun meta-view--fill-info (template-str xml namespace name)
+  "Replace information for XML, NAMESPACE and NAME.
+
+TEMPLATE-STR is the string read from `templates' folder."
+  ;; These keys (prefix with `dollar` sign) are defined in template files
+  (setq template-str (s-replace "$ASSEMBLY_INFO" (f-base xml) template-str)
+        template-str (s-replace "$DLL_PATH" (f-swap-ext xml "dll") template-str)
+        template-str (s-replace "$NAMESPACE" namespace template-str)
+        template-str (s-replace "$NAME" name template-str))  ; class/enum/interface name
+  template-str)
 
 (defun meta-view--choose-template (declare-type)
   "Return the path of the template by DECLARE-TYPE."
@@ -233,14 +356,19 @@ The name should similar to namepsace syntax, `System.Collections.UI`, etc."
   (let* ((xmls (meta-view--all-xmls))  ; Get the list of xml files from current project
          (xmls-len (length xmls))      ; length of the xmls
          (xml-index 0)                 ; index search through all `xmls`
-         xml            ; current xml path as key
-         break          ; flag to stop
-         type           ; xml assembly type
-         comp-name      ; name of the type, the last component from the type
-         splits         ; temporary list to chop namespace, use to produce `comp-name`
-         decalre-type   ; guess the declaration type
-         template       ; chosen template path
-         template-str)  ; template string, load it from `template`
+         (project meta-net-csproj-current)
+         xml             ; current xml path as key
+         break           ; flag to stop
+         type            ; xml assembly type
+         comp-name       ; name of the type, the last component from the type
+         splits          ; temporary list to chop namespace, use to produce `comp-name`
+         decalre-type    ; guess the declaration type
+         template        ; chosen template path
+         template-str    ; template string, load it from `template`
+         type-namespace
+         type-summary    ; summary for type
+         use-namespaces  ; list namespace that displays on top, under `endregion'
+         display-pt)
     (while (and (not break) (< xml-index xmls-len))
       (setq xml (nth xml-index xmls)
             xml-index (1+ xml-index))
@@ -255,23 +383,57 @@ The name should similar to namepsace syntax, `System.Collections.UI`, etc."
           ;; Check if all namespaces exists in the buffer,
           (when (meta-view--match-name type)
             (meta-view-debug "\f")
-            (meta-view-debug "%s" xml)
-            (meta-view-debug "%s" type)
+            (meta-view-debug "xml: %s" xml)
+            (meta-view-debug "Type: %s" type)
+            (meta-view-debug "Name: %s" comp-name)
+            (meta-view-debug "Declare: %s" decalre-type)
             (when (or (string= name comp-name)                   ; Viewing type data?
                       (meta-view--find-matching xml type name))  ; Viewing data under the type
-              (meta-view-debug "found!")
               (setq break t
+                    type-namespace (s-replace (concat "." comp-name) "" type)
                     decalre-type (meta-view--find-declare-type xml type)
                     template (meta-view--choose-template decalre-type)
-                    template-str (meta-view--get-string-from-file template))
+                    template-str (meta-view--get-string-from-file template)
+                    template-str (meta-view--fill-info template-str xml
+                                                       type-namespace comp-name)
+                    type-summary (meta-net-type-summary xml type))
               (meta-view--with-buffer comp-name
+                (setq meta-net-csproj-current project)  ; assign to current project
                 (insert template-str)
 
-                )
-              ;; TODO: ..
-              (jcs-print "Type:" comp-name)
-              (jcs-print "Declare:" decalre-type)
-              )))))))
+                (meta-view--insert-type-summary type-summary type-namespace)
+
+                (goto-char (point-min))
+                (search-forward "$CONTENT" nil t)
+                (delete-region (1- (line-beginning-position)) (line-end-position))
+
+                ;; Insert all reference data
+                (setq display-pt (point))
+                (meta-view--insert-methods (meta-net-type-methods xml type))
+                (unless (= display-pt (point)) (insert "\n") (setq display-pt (point)))
+                (meta-view--insert-fields (meta-net-type-fields xml type))
+                (unless (= display-pt (point)) (insert "\n") (setq display-pt (point)))
+                (meta-view--insert-events (meta-net-type-events xml type))
+                (unless (= display-pt (point)) (insert "\n") (setq display-pt (point)))
+                (meta-view--insert-properties (meta-net-type-properties xml type))
+
+                ;; Insert used namespaces
+                (cl-remove-duplicates use-namespaces)
+                (dolist (namespace use-namespaces)
+                  (meta-view--insert-namespace namespace type-namespace))
+
+                ;; Indent all before displaying
+                (let ((inhibit-message t) message-log-max)
+                  (ignore-errors (indent-region (point-min) (point-max))))
+
+                ;; Finally, points to the target symbol `name`
+                (goto-char (point-min))
+                (re-search-forward (format " %s$" name) nil t)
+                (while (meta-view--inside-comment-or-string-p)
+                  (re-search-forward (format " %s$" name) nil t))
+
+                ;; Display buffer for view
+                (funcall meta-view-display-function (current-buffer))))))))))
 
 (provide 'meta-view)
 ;;; meta-view.el ends here
