@@ -244,23 +244,22 @@ The name should similar to namepsace syntax, `System.Collections.UI`, etc."
     (while (and (not break) (< xml-index xmls-len))
       (setq xml (nth xml-index xmls)
             xml-index (1+ xml-index))
-      (when-let* ((base (f-base xml))
-                  ;; We first compare namespaces
-                  (_match (meta-view--match-name base))
-                  (types (meta-net-xml-types xml))
-                  (types-len (length types))
-                  (type-index 0))
-        (meta-view-debug "\f")
-        (meta-view-debug "%s" xml)
+      (let* ((types (meta-net-xml-types xml))
+             (types-len (length types))
+             (type-index 0))
         (while (and (not break) (< type-index types-len))
           (setq type (nth type-index types)
                 type-index (1+ type-index)
                 splits (split-string type "\\.")
                 comp-name (nth (1- (length splits)) splits))
-          ;; Then we simply compare the type, like namespace
+          ;; Check if all namespaces exists in the buffer,
           (when (meta-view--match-name type)
-            (when (or (string= name comp-name)
-                      (meta-view--find-matching xml type name))
+            (meta-view-debug "\f")
+            (meta-view-debug "%s" xml)
+            (meta-view-debug "%s" type)
+            (when (or (string= name comp-name)                   ; Viewing type data?
+                      (meta-view--find-matching xml type name))  ; Viewing data under the type
+              (meta-view-debug "found!")
               (setq break t
                     decalre-type (meta-view--find-declare-type xml type)
                     template (meta-view--choose-template decalre-type)
