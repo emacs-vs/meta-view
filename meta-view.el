@@ -257,20 +257,22 @@ We use argument TYPE to raise accuracy while search for position."
       ;; Replace keywords
       (setq key (s-replace "#ctor" type key)
             key (s-replace "," ", " key))
-      ;; Add parameter names
-      (dolist (param params)
-        (let* ((param-name (car param))
-               (found-comma (string-match-p "," key))
-               (search (if found-comma "," ")"))
-               (placeholder (if found-comma "~" "`")))
-          (setq key (s-replace search (concat " " param-name placeholder) key))))
-      (setq key (s-replace "~" "," key)
-            key (s-replace "`" ")" key))
+      ;; Add parameter names after each argument types
+      (with-temp-buffer
+        (insert key)
+        (goto-char (point-min))
+        (dolist (param params)
+          (when (re-search-forward "[,)]" nil t)
+            (forward-char -1)
+            (insert " " (car param))
+            (forward-char 1)))
+        (setq key (buffer-string)))
+      ;; Replace xml keywords to C# keywords
       (dolist (pair meta-view-reference-alist)
         (let ((keyword (car pair)) (replace (cdr pair)))
           (setq key (s-replace-regexp (format "\\_<%s\\_>" keyword) replace key t))))
-      (unless (string-match-p ")" key)
-        (setq key (concat key "()")))
+      ;; If missing (), add it
+      (unless (string-match-p ")" key) (setq key (concat key "()")))
       ;; Lastly, insert it!
       (insert "public var " key ";"))))
 
