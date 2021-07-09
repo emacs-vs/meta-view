@@ -68,10 +68,11 @@
 
 (defconst meta-view-reference-alist
   '(("Boolean" . "bool")
+    ("Int32" . "int")
     ("Integer" . "int")
     ("String"  . "string")
     ("Single"   . "float"))
-  "")
+  "List of xml keywords to C# readable keywords.")
 
 (defconst meta-view--buffer-name "%s <from metadata>"
   "Buffer name to display metadata.")
@@ -119,7 +120,7 @@ This function uses `string-match-p'."
     ""))
 
 (defun meta-view--re-seq (regexp string)
-  "Get a list of all REGEXP matches in a STRING."
+  "Get a list of all REGEXP match in a STRING."
   (save-match-data
     (let ((pos 0) matches)
       (while (string-match regexp string pos)
@@ -224,7 +225,9 @@ We use argument TYPE to raise accuracy while search for position."
   (meta-view--re-seq "[(.,]\\([a-zA-Z0-9._-]+\\)[.]" method))
 
 (defun meta-view--insert-methods (methods type)
-  "Insert METHODS data."
+  "Insert METHODS data.
+
+Argument TYPE is used replace #ctor."
   (let ((keys (ht-keys methods)) item summary params returns namespaces
         was-ctor current-ctor done-ctor)
     ;; We sort the constructor infront
