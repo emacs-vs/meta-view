@@ -432,7 +432,8 @@ The name should similar to namepsace syntax, `System.Collections.UI`, etc."
          template-str    ; template string, load it from `template`
          type-namespace
          type-summary    ; summary for type
-         display-pt)
+         display-pt
+         new-buffer)
     (while (and (not break) (< xml-index xmls-len))
       (setq xml (nth xml-index xmls)
             xml-index (1+ xml-index))
@@ -503,7 +504,9 @@ The name should similar to namepsace syntax, `System.Collections.UI`, etc."
                   (re-search-forward (format " %s$" name) nil t))
 
                 ;; Display buffer for view
-                (funcall meta-view-display-function (current-buffer))))))))))
+                (setq new-buffer (current-buffer))
+                (funcall meta-view-display-function new-buffer)))))))
+    new-buffer))
 
 (provide 'meta-view)
 ;;; meta-view.el ends here
