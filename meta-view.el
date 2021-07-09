@@ -57,7 +57,7 @@
   :type 'hook
   :group 'meta-view)
 
-(defcustom meta-view-display-function #'switch-to-buffer-other-window
+(defcustom meta-view-display-function #'switch-to-buffer
   "Function to display reference data."
   :type 'function
   :group 'meta-view)
