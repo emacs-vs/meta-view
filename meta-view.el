@@ -66,6 +66,13 @@
   (concat (file-name-directory load-file-name) "templates/")
   "Templates path for package `meta-view'.")
 
+(defconst meta-view-reference-alist
+  '(("Boolean" . "bool")
+    ("Integer" . "int")
+    ("String"  . "string")
+    ("Single"   . "float"))
+  "")
+
 (defconst meta-view--buffer-name "%s <from metadata>"
   "Buffer name to display metadata.")
 
@@ -77,6 +84,11 @@
 
 (defvar meta-view-show-debug nil
   "Show the debug message from this package.")
+
+(defvar meta-view--namespaces nil
+  "A list of used namespaces in assembly reference file.
+
+This is use only when function `meta-view' is called.")
 
 ;;
 ;; (@* "Util" )
@@ -105,6 +117,15 @@ This function uses `string-match-p'."
   (if (file-exists-p path)
       (with-temp-buffer (insert-file-contents path) (buffer-string))
     ""))
+
+(defun meta-view--re-seq (regexp string)
+  "Get a list of all REGEXP matches in a STRING."
+  (save-match-data
+    (let ((pos 0) matches)
+      (while (string-match regexp string pos)
+        (push (match-string 1 string) matches)
+        (setq pos (match-end 0)))
+      matches)))
 
 (defun meta-view--add-buffer (buffer)
   "Add BUFFER to view list."
@@ -174,7 +195,7 @@ We use argument TYPE to raise accuracy while search for position."
     (forward-line -1)
     (save-excursion
       (forward-line -1)
-      (unless (meta-view--line-empty-p)
+      (unless (string-match-p "using" (thing-at-point 'line))
         (end-of-line)
         (insert "\n")))
     (insert "using " namespace ";\n")))
@@ -194,17 +215,32 @@ We use argument TYPE to raise accuracy while search for position."
   "Insert return (DESC) document string."
   (when desc
     (insert "\n")
+    (insert "//\n")
     (insert "// Returns:\n")
     (insert "//     " desc)))
 
-(defun meta-view--insert-methods (methods)
+(defun meta-view--grab-namespace (method)
+  "Grab namespace from METHOD string."
+  (meta-view--re-seq "[(.,]\\([a-zA-Z0-9._-]+\\)[.]" method))
+
+(defun meta-view--insert-methods (methods type)
   "Insert METHODS data."
-  (let ((keys (ht-keys methods)) item summary params returns)
+  (let ((keys (ht-keys methods)) item summary params returns namespaces
+        was-ctor current-ctor done-ctor)
+    ;; We sort the constructor infront
+    (setq keys (sort keys (lambda (key &rest _)(string-match-p "#ctor" key))))
     (dolist (key keys)
       (setq item (ht-get methods key)
             summary (ht-get item 'summary)
             params (ht-get item 'params)
             returns (ht-get item 'returns))
+      (unless done-ctor  ; Insert line break for ctors
+        (setq current-ctor (string-match-p "#ctor" key))
+        (when (and was-ctor (not current-ctor))
+          (insert "\n")
+          (setq done-ctor t))
+        (setq was-ctor current-ctor))
+      ;; Insert document string
       (meta-view--insert-summary summary)
       (insert "\n")
       (insert "//\n")
@@ -212,6 +248,30 @@ We use argument TYPE to raise accuracy while search for position."
       (meta-view--insert-methods-params params)
       (meta-view--insert-methods-returns returns)
       (insert "\n")
+      ;; Grab namespaces
+      (setq namespaces (meta-view--grab-namespace key)
+            ;; Add to global namespaces, so we can inserted on top later on
+            meta-view--namespaces (append meta-view--namespaces namespaces))
+      (dolist (ns namespaces)  ; Rip off namespace!
+        (setq key (s-replace (concat ns ".") "" key)))
+      ;; Replace keywords
+      (setq key (s-replace "#ctor" type key)
+            key (s-replace "," ", " key))
+      ;; Add parameter names
+      (dolist (param params)
+        (let* ((param-name (car param))
+               (found-comma (string-match-p "," key))
+               (search (if found-comma "," ")"))
+               (placeholder (if found-comma "~" "`")))
+          (setq key (s-replace search (concat " " param-name placeholder) key))))
+      (setq key (s-replace "~" "," key)
+            key (s-replace "`" ")" key))
+      (dolist (pair meta-view-reference-alist)
+        (let ((keyword (car pair)) (replace (cdr pair)))
+          (setq key (s-replace-regexp (format "\\_<%s\\_>" keyword) replace key t))))
+      (unless (string-match-p ")" key)
+        (setq key (concat key "()")))
+      ;; Lastly, insert it!
       (insert "public var " key ";"))))
 
 (defun meta-view--insert-fields (fields)
@@ -346,7 +406,6 @@ The name should similar to namepsace syntax, `System.Collections.UI`, etc."
 ;;;###autoload
 (defun meta-view (name)
   "View metadata by NAME."
-  (interactive)
   (unless (memq major-mode meta-view-active-modes)
     (user-error "Invalid major-mode to view metadata, %s" major-mode))
   (when (meta-view--inside-comment-or-string-p)
@@ -357,6 +416,7 @@ The name should similar to namepsace syntax, `System.Collections.UI`, etc."
          (xmls-len (length xmls))      ; length of the xmls
          (xml-index 0)                 ; index search through all `xmls`
          (project meta-net-csproj-current)
+         meta-view--namespaces  ; list namespace that displays on top, under `endregion'
          xml             ; current xml path as key
          break           ; flag to stop
          type            ; xml assembly type
@@ -367,7 +427,6 @@ The name should similar to namepsace syntax, `System.Collections.UI`, etc."
          template-str    ; template string, load it from `template`
          type-namespace
          type-summary    ; summary for type
-         use-namespaces  ; list namespace that displays on top, under `endregion'
          display-pt)
     (while (and (not break) (< xml-index xmls-len))
       (setq xml (nth xml-index xmls)
@@ -401,15 +460,17 @@ The name should similar to namepsace syntax, `System.Collections.UI`, etc."
                 (setq meta-net-csproj-current project)  ; assign to current project
                 (insert template-str)
 
+                ;; Insert reference summary
                 (meta-view--insert-type-summary type-summary type-namespace)
 
+                ;; Navigate to content keyword, and ready to insert content
                 (goto-char (point-min))
                 (search-forward "$CONTENT" nil t)
                 (delete-region (1- (line-beginning-position)) (line-end-position))
 
                 ;; Insert all reference data
                 (setq display-pt (point))
-                (meta-view--insert-methods (meta-net-type-methods xml type))
+                (meta-view--insert-methods (meta-net-type-methods xml type) comp-name)
                 (unless (= display-pt (point)) (insert "\n") (setq display-pt (point)))
                 (meta-view--insert-fields (meta-net-type-fields xml type))
                 (unless (= display-pt (point)) (insert "\n") (setq display-pt (point)))
@@ -417,9 +478,13 @@ The name should similar to namepsace syntax, `System.Collections.UI`, etc."
                 (unless (= display-pt (point)) (insert "\n") (setq display-pt (point)))
                 (meta-view--insert-properties (meta-net-type-properties xml type))
 
+                ;; Prepare for namespaces
+                (setq meta-view--namespaces (delete-dups meta-view--namespaces)
+                      ;; Remove the namespace that we are currently in
+                      meta-view--namespaces (cl-remove-if (lambda (ns) (string= type-namespace ns))
+                                                          meta-view--namespaces))
                 ;; Insert used namespaces
-                (cl-remove-duplicates use-namespaces)
-                (dolist (namespace use-namespaces)
+                (dolist (namespace meta-view--namespaces)
                   (meta-view--insert-namespace namespace type-namespace))
 
                 ;; Indent all before displaying
