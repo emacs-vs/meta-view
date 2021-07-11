@@ -4,6 +4,10 @@
 # meta-view
 > View metadata from .NET assemblies
 
+<p align="center">
+  <img src="./etc/demo.png" />
+</p>
+
 View assembly metadata, and it's documentation from a C# project, generated
 by Visual Studio IDE (not VSCode).
 
