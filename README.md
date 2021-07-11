@@ -35,7 +35,9 @@ For example, display line numbers for metadata buffer.
             (display-line-numbers-mode 1)))
 ```
 
-<img src="./etc/advance.png" width="463" height="204" />
+<p align="center">
+  <img src="./etc/advance.png" width="463" height="204" />
+</p>
 
 #### `meta-view-display-function`
 
