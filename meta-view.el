@@ -389,7 +389,7 @@ See function `meta-net--type-data-get' for arguments XML and TYPE."
 
 The name should similar to namepsace syntax, `System.Collections.UI`, etc."
   (let* ((names (split-string name "\\."))
-         (match t) keyword (index 0) (len (length names)))
+         (match t) keyword (index 0) (len (length names)) last-item)
     (save-excursion
       ;; Incremental search from the start of the buffer to eliminate
       ;; some of the possible candidates.
@@ -397,7 +397,10 @@ The name should similar to namepsace syntax, `System.Collections.UI`, etc."
       (while (and match (< index len))
         (setq keyword (nth index names)
               index (1+ index)
-              match (re-search-forward (format "%s[ \t\n]*[.;]" keyword) nil t))
+              last-item (= len index))
+        (setq match (re-search-forward
+                     (if last-item keyword (format "%s[ \t\n]*[.;]" keyword))
+                     nil t))
         (when (meta-view--inside-comment-or-string-p)
           (setq match t))))
     (integerp match)))
@@ -489,7 +492,9 @@ The name should similar to namepsace syntax, `System.Collections.UI`, etc."
                 (setq meta-view--namespaces (delete-dups meta-view--namespaces)
                       ;; Remove the namespace that we are currently in
                       meta-view--namespaces (cl-remove-if (lambda (ns) (string= type-namespace ns))
-                                                          meta-view--namespaces))
+                                                          meta-view--namespaces)
+                      ;; Sort in alphabetic order
+                      meta-view--namespaces (sort meta-view--namespaces #'string-lessp))
                 ;; Insert used namespaces
                 (dolist (namespace meta-view--namespaces)
                   (meta-view--insert-namespace namespace type-namespace))
