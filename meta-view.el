@@ -463,7 +463,8 @@ The name should similar to namepsace syntax, `System.Collections.UI`, etc."
                                                        type-namespace comp-name)
                     type-summary (meta-net-type-summary xml type))
               (meta-view--with-buffer comp-name
-                (setq meta-net-csproj-current project)  ; assign to current project
+                (setq meta-net-csproj-current project  ; assign to current project
+                      new-buffer (current-buffer))
                 (insert template-str)
 
                 ;; Insert reference summary
@@ -497,15 +498,17 @@ The name should similar to namepsace syntax, `System.Collections.UI`, etc."
                 (let ((inhibit-message t) message-log-max)
                   (ignore-errors (indent-region (point-min) (point-max))))
 
-                ;; Finally, points to the target symbol `name`
-                (goto-char (point-min))
-                (re-search-forward (format " %s$" name) nil t)
-                (while (meta-view--inside-comment-or-string-p)
-                  (re-search-forward (format " %s$" name) nil t))
-
                 ;; Display buffer for view
-                (setq new-buffer (current-buffer))
-                (funcall meta-view-display-function new-buffer)))))))
+                (funcall meta-view-display-function new-buffer)
+
+                ;; Finally, points to the target symbol `name`
+                (progn  ; Search from namespace, avoid search above namespace
+                  (goto-char (point-min))
+                  (re-search-forward (format "\\_<namespace\\_> %s" type-namespace) nil t))
+                ;; Search for the target symbol
+                (re-search-forward (format " %s$" name) nil t)
+                (while (meta-view--inside-comment-or-string-p)  ; not allow in comment
+                  (re-search-forward (format " %s$" name) nil t))))))))
     new-buffer))
 
 (provide 'meta-view)
