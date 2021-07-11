@@ -4,9 +4,18 @@
 # meta-view
 > View metadata from .NET assemblies
 
-## :floppy_disk: Quickstart
+View assembly metadata, and it's documentation from a C# project, generated
+by Visual Studio IDE (not VSCode).
 
-N/A
+## :floppy_disk: Usage
+
+### :mag: 1. Open a C# file
+
+Make sure the `.cs` file is a valid source file under a C# project.
+
+### :mag: 2. View assembly metadata!
+
+Navigate to a symbol you want to search, then call `M-x meta-view-at-point`.
 
 ## Contribution
 
