@@ -11,6 +11,9 @@
 View assembly metadata, and it's documentation from a C# project, generated
 by Visual Studio IDE (not VSCode).
 
+*P.S. This package mimics the [MetadataSource](https://github.com/dotnet/roslyn/tree/main/src/Features/Core/Portable/MetadataAsSource)
+feature from Visual Studio IDE*
+
 ## :floppy_disk: Usage
 
 ### :mag: 1. Open a C# file
