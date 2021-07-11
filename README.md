@@ -43,7 +43,7 @@ For example, display line numbers for metadata buffer. (on left)
 ```
 
 | Display Line Numbers         | Advance                       |
-|------------------------------|-------------------------------|
+|:-----------------------------|:------------------------------|
 | <img src="./etc/dis-ln.png"> | <img src="./etc/advance.png"> |
 
 You can fold all comments by your favorite folding package. (on right)
