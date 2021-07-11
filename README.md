@@ -5,7 +5,7 @@
 > View metadata from .NET assemblies
 
 <p align="center">
-  <img src="./etc/demo.png" />
+  <img src="./etc/demo.png" width="618" height="307" />
 </p>
 
 View assembly metadata, and it's documentation from a C# project, generated
