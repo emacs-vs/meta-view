@@ -34,7 +34,7 @@ Major modes that allow to view metadata source, default is `csharp-mode`.
 
 Hooks run after buffer is inserted to display view, default is `nil`.
 
-For example, display line numbers for metadata buffer.
+For example, display line numbers for metadata buffer. (on left)
 
 ```el
 (add-hook 'meta-view-after-insert-hook
@@ -42,9 +42,11 @@ For example, display line numbers for metadata buffer.
             (display-line-numbers-mode 1)))
 ```
 
-<p align="center">
-  <img src="./etc/advance.png" width="463" height="204" />
-</p>
+| Display Line Numbers         | Advance                       |
+|------------------------------|-------------------------------|
+| <img src="./etc/dis-ln.png"> | <img src="./etc/advance.png"> |
+
+You can fold all comments by your favorite folding package. (on right)
 
 #### `meta-view-display-function`
 
