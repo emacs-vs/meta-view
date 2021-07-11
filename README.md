@@ -35,6 +35,8 @@ For example, display line numbers for metadata buffer.
             (display-line-numbers-mode 1)))
 ```
 
+<img src="./etc/advance.png" />
+
 #### `meta-view-display-function`
 
 Function call to display reference data, default to `#'switch-to-buffer`.
