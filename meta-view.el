@@ -7,7 +7,7 @@
 ;; Description: View metadata from .NET assemblies
 ;; Keyword: assembly metadata source
 ;; Version: 0.1.0
-;; Package-Requires: ((emacs "26.1") (csharp-mode "0.11.0") (meta-net "1.0.0") (ht "2.3") (f "0.20.0"))
+;; Package-Requires: ((emacs "26.1") (csharp-mode "0.11.0") (meta-net "1.1.0") (ht "2.3") (f "0.20.0"))
 ;; URL: https://github.com/emacs-vs/meta-view
 
 ;; This file is NOT part of GNU Emacs.
