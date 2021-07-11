@@ -107,7 +107,7 @@ This is use only when function `meta-view' is called.")
   "Return non-nil if IN-STR is listed in IN-LIST.
 
 This function uses `string-match-p'."
-  (cl-some (lambda (elm) (string-match-p (regexp-quote elm) in-str)) in-list))
+  (cl-some (lambda (elm) (string-match-p in-str (regexp-quote elm))) in-list))
 
 (defun meta-view--line-empty-p ()
   "Return non-nil, if current line empty."
@@ -138,7 +138,7 @@ This function uses `string-match-p'."
 (defmacro meta-view--with-buffer (name &rest body)
   "Execute BODY inside the metadata displayed buffer with NAME."
   (declare (indent 1) (debug t))
-  `(let ((buf-name (format meta-view--buffer-name name)))
+  `(let ((buf-name (format ,meta-view--buffer-name ,name)))
      (with-current-buffer (get-buffer-create buf-name)
        (meta-view--add-buffer (current-buffer))
        (delay-mode-hooks (funcall 'csharp-mode))
@@ -511,9 +511,9 @@ The name should similar to namepsace syntax, `System.Collections.UI`, etc."
                   (goto-char (point-min))
                   (re-search-forward (format "\\_<namespace\\_> %s" type-namespace) nil t))
                 ;; Search for the target symbol
-                (re-search-forward (format " %s$" name) nil t)
+                (re-search-forward (format "\\_<%s\\_>" name) nil t)
                 (while (meta-view--inside-comment-or-string-p)  ; not allow in comment
-                  (re-search-forward (format " %s$" name) nil t))))))))
+                  (re-search-forward (format "\\_<%s\\_>" name) nil t))))))))
     new-buffer))
 
 (provide 'meta-view)
