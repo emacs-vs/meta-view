@@ -138,7 +138,7 @@ This function uses `string-match-p'."
 (defmacro meta-view--with-buffer (name &rest body)
   "Execute BODY inside the metadata displayed buffer with NAME."
   (declare (indent 1) (debug t))
-  `(let ((buf-name (format ,meta-view--buffer-name ,name)))
+  `(let ((buf-name (format meta-view--buffer-name ,name)))
      (with-current-buffer (get-buffer-create buf-name)
        (meta-view--add-buffer (current-buffer))
        (delay-mode-hooks (funcall 'csharp-mode))
