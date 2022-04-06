@@ -1,4 +1,7 @@
-(package "meta-view" "0.1.0" "View metadata from .NET assemblies")
+(package "meta-view"
+         "0.1.0"
+         "View metadata from .NET assemblies")
+
 (package-file "meta-view.el")
 
 (source "jcs-elpa")
