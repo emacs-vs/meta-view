@@ -3,7 +3,7 @@
          "View metadata from .NET assemblies")
 
 (website-url "https://github.com/emacs-vs/meta-view")
-(keywords "assembly" "metadata" "source")
+(keywords "convenience" "assembly" "metadata" "source")
 
 (package-file "meta-view.el")
 
