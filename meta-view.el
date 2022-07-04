@@ -7,7 +7,7 @@
 ;; URL: https://github.com/emacs-vs/meta-view
 ;; Version: 0.1.0
 ;; Package-Requires: ((emacs "26.1") (csharp-mode "0.11.0") (meta-net "1.1.0") (ht "2.3") (f "0.20.0"))
-;; Keywords: assembly metadata source
+;; Keywords: convenience assembly metadata source
 
 ;; This file is NOT part of GNU Emacs.
 
