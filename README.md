@@ -4,7 +4,7 @@
 # meta-view
 > View metadata from .NET assemblies
 
-![CI](https://github.com/emacs-vs/meta-view/workflows/CI/badge.svg)
+[![CI](https://github.com/emacs-vs/meta-view/actions/workflows/test.yml/badge.svg)](https://github.com/emacs-vs/meta-view/actions/workflows/test.yml)
 
 <p align="center">
   <img src="./etc/demo.png" width="618" height="307" />
