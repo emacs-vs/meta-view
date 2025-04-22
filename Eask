@@ -1,3 +1,5 @@
+;; -*- mode: eask; lexical-binding: t -*-
+
 (package "meta-view"
          "0.1.0"
          "View metadata from .NET assemblies")
