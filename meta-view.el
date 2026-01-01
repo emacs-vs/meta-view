@@ -1,6 +1,6 @@
 ;;; meta-view.el --- View metadata from .NET assemblies  -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2021-2025 Shen, Jen-Chieh
+;; Copyright (C) 2021-2026 Shen, Jen-Chieh
 ;; Created date 2021-06-24 14:01:15
 
 ;; Author: Shen, Jen-Chieh <jcs090218@gmail.com>
